@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>老师行为盘口</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Noto+Sans+SC:wght@400;500;700&family=ZCOOL+QingKe+HuangYou&display=swap">
+<style id="app-css">
+/* Layout: one poster column. A Nordic-cross masthead, then each 盘 as a band split by heavy yellow rules. The palette is literally 蓝底黄字. */
+:root{
+  --blue:#0B4A8E;
+  --blue-deep:#06386E;
+  --blue-lift:#15599F;
+  --yellow:#FFCD00;
+  --paper:#DDE7F3;
+  --mute:#AFC3DD;
+  --line:rgba(255,205,0,.34);
+  --alert:#FF9E82;
+  --display:"ZCOOL QingKe HuangYou","Noto Sans SC","PingFang SC",sans-serif;
+  --num:"Big Shoulders Display","Arial Narrow","Noto Sans SC",sans-serif;
+  --body:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--blue)}
+body{background:var(--blue);color:var(--yellow);font:15px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding-inline:20px;padding-block:28px 116px}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+/* masthead */
+.mast{display:flex;flex-direction:column}
+.eyebrow{margin:0 0 10px;font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--paper)}
+.title{margin:0;font:400 clamp(46px,13vw,92px)/1 var(--display);letter-spacing:.02em;text-wrap:balance;overflow-wrap:anywhere}
+.cross{position:relative;height:58px;margin:22px 0 18px}
+.cross::before{content:"";position:absolute;left:0;right:0;top:50%;height:12px;margin-top:-6px;background:var(--yellow)}
+.cross::after{content:"";position:absolute;top:0;bottom:0;left:min(24%,128px);width:12px;background:var(--yellow)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+.stats div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.stats dt{font-size:12px;letter-spacing:.16em;color:var(--paper)}
+.stats dd{margin:0;font:800 clamp(36px,10vw,56px)/1 var(--num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stats small{margin-left:4px;font:500 13px var(--body);letter-spacing:0;color:var(--paper)}
+
+.banner{margin:26px 0 0;padding:10px 14px;border:2px solid var(--yellow);font-weight:500}
+.banner p{margin:0}
+.banner .acts{margin-top:10px}
+.loading{margin:48px 0;color:var(--paper)}
+.note{display:flex;gap:12px;align-items:flex-start;margin-top:26px;padding:12px 8px 12px 14px;border:2px dashed var(--line);color:var(--paper);font-size:14px}
+.note p{margin:0;flex:1;min-width:0}
+.note .lbl{display:inline-block;margin-right:8px;padding:0 7px;background:var(--yellow);color:var(--blue-deep);font-size:12px;font-weight:700;border-radius:2px;vertical-align:1px}
+
+/* markets */
+.mkts{display:flex;flex-direction:column;margin-top:36px}
+.mkt{display:flex;flex-direction:column;gap:14px;padding-block:18px 30px;border-top:4px solid var(--yellow)}
+.mkt-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.mkt-no{font-size:13px;font-weight:500;letter-spacing:.08em;color:var(--paper)}
+.mkt-no b{margin:0 3px;font:800 30px/1 var(--num);color:var(--yellow);vertical-align:-3px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;border:1.5px solid var(--yellow);border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.1em;white-space:nowrap}
+.chip-open::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--yellow);animation:blink 1.6s ease-in-out infinite}
+.chip-locked{border-color:var(--mute);color:var(--mute)}
+.chip-settled{background:var(--yellow);color:var(--blue-deep)}
+@keyframes blink{50%{opacity:.2}}
+.mkt-q{margin:0;font:400 clamp(27px,6.6vw,38px)/1.15 var(--display);text-wrap:balance;overflow-wrap:anywhere}
+.mkt-meta{margin:-6px 0 0;font-size:13px;color:var(--paper)}
+.mkt-meta b{font:800 17px var(--num);color:var(--yellow)}
+.hint{margin:0;padding:10px 14px;background:var(--yellow);color:var(--blue-deep);font-weight:700;border-radius:4px}
+.empty-mkt{padding:22px 0;border-top:4px solid var(--yellow);color:var(--paper)}
+.empty-mkt p{margin:0}
+
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{background:var(--blue-deep);border-radius:4px}
+.opt-pick{appearance:none;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label odds" "bar bar" "pool pool";gap:6px 14px;width:100%;padding:12px 14px;margin:0;background:none;border:2px solid transparent;border-radius:4px;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.opt-pick:disabled{cursor:default}
+.opt-pick:not(:disabled):hover{background:var(--blue-lift)}
+.is-sel .opt-pick{border-color:var(--yellow)}
+.is-settling .opt-pick:not(:disabled){border:2px dashed var(--line)}
+.opt-label{grid-area:label;min-width:0;font-size:16.5px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.opt-odds{grid-area:odds;align-self:center;font:800 28px/1 var(--num);font-variant-numeric:tabular-nums}
+.opt-bar{grid-area:bar;height:8px;background:rgba(255,205,0,.16);border-radius:2px;overflow:hidden}
+.opt-bar i{display:block;height:100%;background:var(--yellow);transition:width .45s cubic-bezier(.2,.7,.2,1)}
+.opt-pool{grid-area:pool;font-size:12.5px;color:var(--paper);font-variant-numeric:tabular-nums}
+.tick,.stamp{font-style:normal;margin-right:8px;padding:1px 7px;border-radius:2px;vertical-align:2px}
+.tick{background:var(--yellow);color:var(--blue-deep);font-size:11.5px;font-weight:700}
+.stamp{background:var(--blue-deep);color:var(--yellow);font:400 13px var(--display)}
+.is-win{background:var(--yellow);color:var(--blue-deep)}
+.is-win .opt-pool{color:var(--blue-deep)}
+.is-win .opt-bar{background:rgba(6,56,110,.2)}
+.is-win .opt-bar i{background:var(--blue-deep)}
+.is-lose{opacity:.6}
+.opt-bets{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0 14px 12px;list-style:none}
+.opt-bets li{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:1px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;color:var(--paper)}
+.opt-bets li b{font:800 15px var(--num);color:var(--yellow)}
+.opt-bets li:has(.x){padding-right:2px}
+.is-win .opt-bets li{border-color:rgba(6,56,110,.35);color:var(--blue-deep)}
+.is-win .opt-bets li b{color:var(--blue-deep)}
+.x{appearance:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:999px;background:none;color:var(--mute);font-size:17px;line-height:1;cursor:pointer}
+.x:hover{background:var(--blue-lift);color:var(--yellow)}
+.x:disabled{opacity:.3;cursor:not-allowed}
+
+.payout{padding:2px 0 2px 14px;border-left:4px solid var(--yellow);color:var(--paper);font-size:14px}
+.payout p{margin:0}
+.payout ul{margin:6px 0 0;padding:0;list-style:none}
+.payout b{font:800 18px var(--num);color:var(--yellow)}
+.payout strong{color:var(--yellow)}
+
+/* forms */
+.betform{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:12px;align-items:end;padding-top:4px}
+.betform .btn,.betform .form-msg{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;padding:0;border:0}
+label,legend{padding:0;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--paper)}
+legend{margin-bottom:6px}
+input,textarea{width:100%;min-width:0;padding:10px 12px;background:var(--blue-deep);border:2px solid var(--line);border-radius:4px;color:var(--yellow);font:500 16px/1.4 var(--body)}
+input:focus,textarea:focus{outline:none;border-color:var(--yellow)}
+input::placeholder,textarea::placeholder{color:var(--mute);opacity:1}
+textarea{resize:vertical}
+.amt{display:flex;flex-wrap:wrap;gap:6px}
+.amt input{flex:1 1 76px;width:auto;font:800 20px/1.2 var(--num);font-variant-numeric:tabular-nums}
+.qa{appearance:none;min-width:46px;padding:0 8px;background:none;border:2px solid var(--line);border-radius:4px;color:var(--yellow);font:800 17px var(--num);cursor:pointer}
+.qa[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--blue-deep)}
+.form-msg{margin:0;font-size:13.5px;color:var(--paper)}
+.form-msg:empty{display:none}
+.form-msg.is-err{color:var(--alert)}
+.newform,.editform{display:flex;flex-direction:column;gap:14px}
+.erow{display:flex;gap:8px;align-items:center}
+.erow input{flex:1}
+.ecount{min-width:44px;font-size:12px;color:var(--mute);text-align:center;white-space:nowrap}
+
+.btn{appearance:none;padding:13px 18px;border:2px solid var(--yellow);border-radius:4px;background:none;color:var(--yellow);font:700 15px/1.2 var(--body);letter-spacing:.04em;cursor:pointer}
+.btn-solid{background:var(--yellow);color:var(--blue-deep)}
+.btn-solid:hover{background:#FFE066}
+.btn-ghost{border-color:var(--line);color:var(--paper)}
+.btn-ghost:hover{border-color:var(--yellow);color:var(--yellow)}
+.btn-danger{background:var(--alert);border-color:var(--alert);color:var(--blue-deep)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{align-self:flex-start;padding:8px 14px;font-size:13.5px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.acts .btn{padding:9px 14px;font-size:13.5px}
+
+/* sections */
+.sec{display:flex;flex-direction:column;gap:14px;padding-block:18px 26px;border-top:4px solid var(--yellow)}
+.sec-title{margin:0;font:400 32px/1.1 var(--display)}
+.sec-sub{margin:-4px 0 0;font-size:14px;color:var(--paper);max-width:62ch}
+.tpl{display:flex;flex-wrap:wrap;gap:8px}
+.tag{appearance:none;padding:6px 14px;background:none;border:1.5px solid var(--yellow);border-radius:999px;color:var(--yellow);font:500 14px var(--body);cursor:pointer}
+.tag:hover{background:var(--yellow);color:var(--blue-deep)}
+.empty{margin:0;color:var(--paper)}
+
+.rank{margin:0;padding:0;list-style:none}
+.rank li{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.r-no{font:800 24px/1 var(--num);color:var(--mute)}
+.rank li.lead .r-no{color:var(--yellow)}
+.r-who{display:flex;flex-direction:column;min-width:0;font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.r-who small{font-size:12.5px;font-weight:400;color:var(--mute)}
+.r-net{font:800 30px/1 var(--num);font-variant-numeric:tabular-nums;text-align:right}
+.r-net small{margin-left:3px;font:500 12px var(--body);color:var(--paper)}
+.r-net.neg{color:var(--paper)}
+.r-net.zero{color:var(--mute)}
+
+.settings summary{padding:6px 0;color:var(--paper);font-weight:700;cursor:pointer;list-style:none}
+.settings summary::-webkit-details-marker{display:none}
+.settings summary::before{content:"▸";display:inline-block;width:1.2em;transition:transform .2s}
+.settings[open] summary::before{transform:rotate(90deg)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:8px 0 16px}
+#copy-out{font-size:13.5px;color:var(--paper)}
+
+/* tap-to-edit headings */
+[data-edit]{cursor:text;text-decoration:underline dashed var(--line);text-decoration-thickness:2px;text-underline-offset:.2em;border-radius:2px;-webkit-user-select:text;user-select:text}
+.title[data-edit]{text-decoration-thickness:3px}
+[data-edit]:hover{text-decoration-color:var(--yellow)}
+[data-edit]:focus{outline:2px solid var(--yellow);outline-offset:4px;text-decoration:none}
+[data-edit]:empty::before{content:attr(data-ph);color:var(--mute)}
+
+.foot{margin-top:8px;padding-top:16px;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+.foot p{margin:0 0 8px;max-width:62ch}
+.foot b{color:var(--paper)}
+
+.pill{position:fixed;z-index:10;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 32px);padding:8px 16px;border-radius:999px;background:var(--yellow);color:var(--blue-deep);font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.28)}
+.pill button{appearance:none;padding:2px 10px;border:1.5px solid var(--blue-deep);border-radius:999px;background:none;color:var(--blue-deep);font:700 12.5px var(--body);cursor:pointer}
+
+@media (max-width:520px){
+  .wrap{padding-inline:16px}
+  .betform{grid-template-columns:1fr}
+  .opt-odds{font-size:25px}
+  .cross{height:46px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+<main id="app" class="wrap"></main>
+<script type="application/json" id="board-data">{"v":1,"rev":2,"updated":"2026-10-12T07:55:00.000Z","title":"老师行为盘口","sub":"设计课 · 10月12日开盘","unit":"分","labels":{"new":"开新盘","ledger":"盈亏榜","tools":"发到群里"},"note":"带虚线的标题都能直接点开改字，包括大标题、小标题、每一盘的问题和各栏标题，按回车或点别处就保存。下面三盘是示例，可以改选项或删掉。","markets":[{"id":"hw","q":"这节课布置什么作业？","status":"open","result":null,"opts":[{"id":"nordic","label":"北欧设计海报"},{"id":"chars","label":"用这些字做设计"},{"id":"other","label":"别的作业"}],"bets":[]},{"id":"late","q":"今天拖不拖堂？","status":"open","result":null,"opts":[{"id":"early","label":"提前放人"},{"id":"ontime","label":"准时下课"},{"id":"drag","label":"拖堂"}],"bets":[]},{"id":"roll","q":"今天会点名吗？","status":"open","result":null,"opts":[{"id":"yes","label":"点名"},{"id":"no","label":"不点名"}],"bets":[]}]}</script>
+<script id="app-js">
+(function () {
+  'use strict';
+  var FONT_HREF = 'https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Noto+Sans+SC:wght@400;500;700&family=ZCOOL+QingKe+HuangYou&display=swap';
+  var RESET = ':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}';
+  var PAGE_TITLE = '老师行为盘口';
+  var DEF_LABELS = { new: '开新盘', ledger: '盈亏榜', tools: '发到群里' };
+  var LIMITS = { title: 24, sub: 40, q: 60, sec: 12 };
+  var LS_KEY = 'teacher-bet-board:v1';
+  var SS_KEY = 'teacher-bet-ui:v1';
+  var TPL = [
+    { k: '拖堂', q: '今天拖不拖堂？', o: ['提前放人', '准时下课', '拖 5 分钟以内', '拖 5 分钟以上'] },
+    { k: '点名', q: '今天会点名吗？', o: ['点名', '不点名'] },
+    { k: '作业', q: '这节课布置什么作业？', o: ['海报', '排版练习', '字体设计', '不布置'] },
+    { k: '几点进门', q: '老师几点进教室？', o: ['提前到', '准点', '迟到 5 分钟内', '迟到更久'] },
+    { k: '口头禅', q: '老师今天说几次“对吧”？', o: ['5 次以内', '6 到 15 次', '16 次以上'] },
+    { k: '最后一页', q: '下课前会不会说“最后一页”？', o: ['会', '不会'] }
+  ];
+
+  var app = document.getElementById('app');
+  var cssEl = document.getElementById('app-css');
+  var jsEl = document.getElementById('app-js');
+  var embedded = normalize(readJSON(document.getElementById('board-data').textContent));
+  var state = clone(embedded);
+  var mode = 'boot';
+  var api = null;
+  var pub = { timer: 0, dirty: false, saving: false, err: '', retried: false, since: 0 };
+  var ui = { drafts: {}, mk: { q: '', opts: '' }, editing: null, editDraft: null, settling: null, confirmDel: null, confirmClear: false, errs: {}, done: {}, roReason: '', copyText: '', copyKind: '', copied: '', settingsOpen: false, snapAt: '', snapErr: '', confirmImport: false, sharePayload: '', shareKey: '', shareBusy: '' };
+  var flashTimer = 0, copyTimer = 0;
+
+  /* ---------- helpers ---------- */
+  function readJSON(s) { try { return JSON.parse(s); } catch (e) { return null; } }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  function uid() { return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function str(v, d) { return typeof v === 'string' && v.trim() ? v : d; }
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function fmt(n) { var r = Math.round(n * 10) / 10; if (r === 0) r = 0; return String(r); }
+  function sign(n) { var r = Math.round(n * 10) / 10; return r > 0 ? '+' + fmt(r) : r < 0 ? '−' + fmt(-r) : '0'; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function when(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function findM(id) { for (var i = 0; i < state.markets.length; i++) if (state.markets[i].id === id) return state.markets[i]; return null; }
+  function optOf(m, id) { for (var i = 0; i < m.opts.length; i++) if (m.opts[i].id === id) return m.opts[i]; return null; }
+  function draft(mid) { return ui.drafts[mid] || (ui.drafts[mid] = { who: '', amt: 10, o: null }); }
+  function canWrite() { return mode !== 'readonly' && mode !== 'snapshot'; }
+
+  function normalize(d) {
+    d = d && typeof d === 'object' ? d : {};
+    var out = { v: 1, rev: +d.rev || 0, updated: typeof d.updated === 'string' ? d.updated : '', title: str(d.title, '老师行为盘口'), sub: typeof d.sub === 'string' ? d.sub : '', unit: str(d.unit, '分'), note: typeof d.note === 'string' ? d.note : '', labels: {}, markets: [] };
+    var lb = d.labels && typeof d.labels === 'object' ? d.labels : {};
+    Object.keys(DEF_LABELS).forEach(function (k) { out.labels[k] = str(lb[k], DEF_LABELS[k]); });
+    (Array.isArray(d.markets) ? d.markets : []).forEach(function (m) {
+      if (!m || !m.id || !Array.isArray(m.opts)) return;
+      var ids = {};
+      var opts = m.opts.filter(function (o) { return o && o.id && !ids[o.id] && (ids[o.id] = 1); })
+        .map(function (o) { return { id: String(o.id), label: String(o.label || '') }; });
+      var bets = (Array.isArray(m.bets) ? m.bets : []).filter(function (b) { return b && ids[b.o] && num(b.amt) > 0; })
+        .map(function (b) { return { id: String(b.id || uid()), o: String(b.o), who: String(b.who || '无名'), amt: num(b.amt), t: +b.t || 0 }; });
+      var status = ['open', 'locked', 'settled'].indexOf(m.status) >= 0 ? m.status : 'open';
+      var result = m.result && ids[m.result] ? String(m.result) : null;
+      if (status === 'settled' && !result) status = 'locked';
+      out.markets.push({ id: String(m.id), q: String(m.q || ''), opts: opts, bets: bets, status: status, result: status === 'settled' ? result : null });
+    });
+    return out;
+  }
+
+  /* ---------- 独赢 maths ---------- */
+  function tally(m) {
+    var per = {}, T = 0;
+    m.opts.forEach(function (o) { per[o.id] = { pool: 0, n: 0 }; });
+    m.bets.forEach(function (b) { var p = per[b.o]; if (!p) return; p.pool += b.amt; p.n += 1; T += b.amt; });
+    return { per: per, T: T, n: m.bets.length };
+  }
+  function payout(m, t, b) {
+    if (m.status !== 'settled' || !m.result) return null;
+    var W = t.per[m.result] ? t.per[m.result].pool : 0;
+    if (W <= 0) return b.amt;
+    return b.o === m.result ? b.amt * t.T / W : 0;
+  }
+  function ledger() {
+    var map = {}, rows = [];
+    state.markets.forEach(function (m) {
+      var t = tally(m);
+      m.bets.forEach(function (b) {
+        var r = map[b.who];
+        if (!r) { r = map[b.who] = { who: b.who, staked: 0, back: 0, pending: 0, hits: 0, played: 0 }; rows.push(r); }
+        var p = payout(m, t, b);
+        if (p === null) { r.pending += b.amt; return; }
+        r.staked += b.amt; r.back += p; r.played += 1;
+        if (b.o === m.result) r.hits += 1;
+      });
+    });
+    rows.forEach(function (r) { r.net = r.back - r.staked; });
+    rows.sort(function (a, b) { return (b.net - a.net) || (b.pending - a.pending) || a.who.localeCompare(b.who, 'zh'); });
+    return rows;
+  }
+  function names() {
+    var seen = {}, out = [];
+    state.markets.forEach(function (m) { m.bets.forEach(function (b) { if (!seen[b.who]) { seen[b.who] = 1; out.push(b.who); } }); });
+    return out;
+  }
+
+  /* ---------- render ---------- */
+  function ed(key, ph) {
+    return canWrite() ? ' contenteditable="true" spellcheck="false" data-edit="' + esc(key) + '" data-ph="' + esc(ph || '') + '" title="点一下就能改"' : '';
+  }
+  function render() {
+    var a = document.activeElement, aid = a && app.contains(a) && a.id ? a.id : null, sel = null, wasEdit = false;
+    if (aid && a.dataset && a.dataset.edit) { commitHeading(a); wasEdit = true; }
+    else if (aid && /^(INPUT|TEXTAREA)$/.test(a.tagName)) { try { sel = [a.selectionStart, a.selectionEnd]; } catch (e) { sel = null; } }
+    var can = canWrite(), tot = 0, cnt = 0;
+    state.markets.forEach(function (m) { var t = tally(m); tot += t.T; cnt += t.n; });
+    var h = '<header class="mast">';
+    if (state.sub || can) h += '<p class="eyebrow" id="h-sub"' + ed('sub', '点这里写小标题') + '>' + esc(state.sub) + '</p>';
+    h += '<h1 class="title" id="h-title"' + ed('title', '大标题') + '>' + esc(state.title) + '</h1>';
+    h += '<div class="cross" aria-hidden="true"></div>';
+    h += '<dl class="stats">' + stat('盘口', state.markets.length, '盘') + stat('总奖池', fmt(tot), state.unit) + stat('下注', cnt, '注') + '</dl>';
+    h += '</header>';
+    if (mode === 'readonly') h += '<p class="banner">' + esc(ui.roReason || '只读：盘口由开盘的人维护，他一更新，这页就会自动刷新。') + '</p>';
+    if (mode === 'snapshot') {
+      h += '<div class="banner"><p>这是开盘的人' + (ui.snapAt ? '在 ' + esc(when(ui.snapAt)) + ' ' : '') + '发出的盘口，只能看。之后的变化，要等他重新发链接。</p><div class="acts">' +
+        (ui.confirmImport ? act('import', '', '替换我这台设备上的盘口', 'btn-danger') + act('import-no', '', '取消', 'btn-ghost')
+          : act('import', '', '我来开盘：在这台设备上接着编辑', 'btn-ghost')) + '</div></div>';
+    }
+    if (ui.snapErr) h += '<p class="banner">' + esc(ui.snapErr) + '</p>';
+    if (state.note) {
+      h += '<div class="note"><p><span class="lbl">说明</span>' + esc(state.note) + '</p>' +
+        (can ? '<button type="button" class="x" data-act="note-x" aria-label="收起说明">×</button>' : '') + '</div>';
+    }
+    h += '<div class="mkts">' + (state.markets.length ? state.markets.map(renderMarket).join('') :
+      '<div class="empty-mkt"><p>' + (can ? '还没有盘口。在下面“开新盘”写一个，比如“今天拖不拖堂”。' : '还没有盘口。') + '</p></div>') + '</div>';
+    if (can) h += renderNew();
+    h += renderLedger();
+    h += renderTools(can);
+    h += '<footer class="foot"><p><b>独赢规则</b>：每盘的注码进同一个奖池。开奖后，押中的人按自己注码的比例分走整个奖池；没人押中就全部退回。赔率 ×2.00 的意思是押 10 拿回 20。</p>' +
+      '<p>' + (state.updated ? '最后更新 ' + esc(when(state.updated)) + ' · ' : '') + '配色：蓝底黄字。</p></footer>';
+    h += '<datalist id="names">' + names().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>';
+    app.innerHTML = h;
+    if (hosted()) document.title = state.title;
+    refreshShare();
+    if (aid) {
+      var n = document.getElementById(aid);
+      if (n) {
+        try {
+          n.focus({ preventScroll: true });
+          if (sel) n.setSelectionRange(sel[0], sel[1]);
+          else if (wasEdit) { var r = document.createRange(); r.selectNodeContents(n); r.collapse(false); var s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+        } catch (e) {}
+      }
+    }
+  }
+  function stat(k, v, u) { return '<div><dt>' + k + '</dt><dd>' + esc(v) + '<small>' + esc(u) + '</small></dd></div>'; }
+
+  function renderMarket(m, i) {
+    var can = canWrite();
+    if (can && ui.editing === m.id && ui.editDraft) return renderEdit(m, i);
+    var t = tally(m), d = draft(m.id), id = esc(m.id), st = m.status;
+    var settling = can && ui.settling === m.id;
+    var label = st === 'open' ? '开盘中' : st === 'locked' ? '已封盘' : '已开奖';
+    var h = '<section class="mkt is-' + st + (settling ? ' is-settling' : '') + '" id="m-' + id + '" aria-labelledby="q-' + id + '">';
+    h += '<div class="mkt-head"><span class="mkt-no">第<b>' + (i + 1) + '</b>盘 · 独赢</span><span class="chip chip-' + st + '">' + label + '</span></div>';
+    h += '<h2 class="mkt-q" id="q-' + id + '"' + ed('q:' + m.id, '盘口问题') + '>' + esc(m.q) + '</h2>';
+    h += '<p class="mkt-meta">奖池 <b>' + fmt(t.T) + '</b> ' + esc(state.unit) + ' · ' + t.n + ' 注</p>';
+    if (settling) h += '<p class="hint">点一下实际发生的那个选项，这盘就开奖。</p>';
+    h += '<div class="opts">';
+    m.opts.forEach(function (o) {
+      var p = t.per[o.id], oid = esc(o.id);
+      var pct = t.T > 0 ? Math.round(p.pool / t.T * 100) : 0;
+      var odds = p.pool > 0 ? '×' + (t.T / p.pool).toFixed(2) : '—';
+      var win = st === 'settled' && m.result === o.id;
+      var lose = st === 'settled' && m.result !== o.id;
+      var sel = can && !settling && st === 'open' && d.o === o.id;
+      var pickable = can && (settling || st === 'open');
+      h += '<div class="opt' + (win ? ' is-win' : '') + (lose ? ' is-lose' : '') + (sel ? ' is-sel' : '') + '">';
+      h += '<button type="button" class="opt-pick" data-act="pick" data-m="' + id + '" data-o="' + oid + '"' +
+        (pickable ? '' : ' disabled') + (can && st === 'open' && !settling ? ' aria-pressed="' + sel + '"' : '') + '>';
+      h += '<span class="opt-label">' + (win ? '<em class="stamp">胜</em>' : '') + (sel ? '<em class="tick">已选</em>' : '') + esc(o.label) + '</span>';
+      h += '<span class="opt-odds">' + odds + '</span>';
+      h += '<span class="opt-bar"><i style="width:' + pct + '%"></i></span>';
+      h += '<span class="opt-pool">' + fmt(p.pool) + ' ' + esc(state.unit) + ' · ' + p.n + ' 注 · 占 ' + pct + '%</span>';
+      h += '</button>';
+      var bets = m.bets.filter(function (b) { return b.o === o.id; });
+      if (bets.length) {
+        h += '<ul class="opt-bets">' + bets.map(function (b) {
+          var x = can && st !== 'settled' && !settling ? '<button type="button" class="x" data-act="delbet" data-m="' + id + '" data-b="' + esc(b.id) + '" aria-label="删掉' + esc(b.who) + '的这注">×</button>' : '';
+          return '<li><span>' + esc(b.who) + '</span><b>' + fmt(b.amt) + '</b>' + x + '</li>';
+        }).join('') + '</ul>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+    if (st === 'settled') h += renderPayout(m, t);
+    if (can && st === 'open' && !settling) h += renderBetForm(m);
+    if (can) h += renderActs(m, i, settling);
+    return h + '</section>';
+  }
+
+  function renderPayout(m, t) {
+    var o = optOf(m, m.result), u = esc(state.unit);
+    var W = t.per[m.result] ? t.per[m.result].pool : 0;
+    var head = '开奖结果：<strong>' + esc(o ? o.label : '') + '</strong>';
+    if (!t.n) return '<div class="payout"><p>' + head + '。这盘没人下注。</p></div>';
+    if (W <= 0) return '<div class="payout"><p>' + head + '。没人押中，' + fmt(t.T) + ' ' + u + ' 全部退回。</p></div>';
+    var rows = m.bets.filter(function (b) { return b.o === m.result; }).map(function (b) {
+      var p = b.amt * t.T / W;
+      return '<li>' + esc(b.who) + ' 押 ' + fmt(b.amt) + '，派彩 <b>' + fmt(p) + '</b> ' + u + '（' + sign(p - b.amt) + '）</li>';
+    });
+    return '<div class="payout"><p>' + head + '，赔率 ×' + (t.T / W).toFixed(2) + '</p><ul>' + rows.join('') + '</ul></div>';
+  }
+
+  function betLabel(m, d) {
+    var o = d.o && optOf(m, d.o);
+    if (!o) return '先点上面一个选项';
+    var a = num(d.amt);
+    return '押「' + o.label + '」' + (a > 0 ? ' ' + fmt(a) + ' ' + state.unit : '');
+  }
+  function renderBetForm(m) {
+    var d = draft(m.id), id = esc(m.id), err = ui.errs[m.id] || '', done = ui.done[m.id] || '';
+    var h = '<form class="betform" data-form="bet" data-m="' + id + '" novalidate>';
+    h += '<div class="field"><label for="who-' + id + '">下注人</label><input id="who-' + id + '" name="who" data-m="' + id + '" list="names" maxlength="16" autocomplete="off" placeholder="名字" value="' + esc(d.who) + '"></div>';
+    h += '<div class="field"><label for="amt-' + id + '">注码（' + esc(state.unit) + '）</label><div class="amt">' +
+      '<input id="amt-' + id + '" name="amt" data-m="' + id + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(d.amt) + '">' +
+      [5, 10, 20, 50].map(function (v) {
+        return '<button type="button" class="qa" data-act="qa" data-m="' + id + '" data-v="' + v + '" aria-pressed="' + (num(d.amt) === v) + '">' + v + '</button>';
+      }).join('') + '</div></div>';
+    h += '<button type="submit" class="btn btn-solid bet-go">' + esc(betLabel(m, d)) + '</button>';
+    h += '<p class="form-msg' + (err ? ' is-err' : '') + '" role="status">' + esc(err || done) + '</p>';
+    return h + '</form>';
+  }
+
+  function act(name, mid, text, cls) {
+    return '<button type="button" class="btn ' + (cls || '') + '" data-act="' + name + '" data-m="' + esc(mid) + '">' + text + '</button>';
+  }
+  function renderActs(m, i, settling) {
+    if (ui.confirmDel === m.id) {
+      return '<div class="acts">' + act('del-yes', m.id, '确认删除第 ' + (i + 1) + ' 盘', 'btn-danger') + act('del-no', m.id, '取消', 'btn-ghost') + '</div>';
+    }
+    if (settling) return '<div class="acts">' + act('settle-no', m.id, '取消开奖', 'btn-ghost') + '</div>';
+    var b = [];
+    if (m.status === 'open') b.push(act('lock', m.id, '封盘'), act('settle', m.id, '开奖'));
+    if (m.status === 'locked') b.push(act('unlock', m.id, '重新开盘'), act('settle', m.id, '开奖'));
+    if (m.status === 'settled') b.push(act('unsettle', m.id, '撤销开奖'));
+    b.push(act('edit', m.id, '改选项', 'btn-ghost'), act('del', m.id, '删除', 'btn-ghost'));
+    return '<div class="acts">' + b.join('') + '</div>';
+  }
+
+  function renderEdit(m, i) {
+    var e = ui.editDraft, id = esc(m.id), counts = {};
+    m.bets.forEach(function (b) { counts[b.o] = (counts[b.o] || 0) + 1; });
+    var h = '<section class="mkt is-editing" id="m-' + id + '"><div class="mkt-head"><span class="mkt-no">第<b>' + (i + 1) + '</b>盘 · 改选项</span></div>';
+    h += '<form class="editform" data-form="edit" data-m="' + id + '" novalidate>';
+    h += '<div class="field"><label for="eq-' + id + '">盘口问题</label><input id="eq-' + id + '" data-ef="q" maxlength="60" value="' + esc(e.q) + '"></div>';
+    h += '<fieldset class="field"><legend>选项（已经有人押的选项只能改字，不能删）</legend>';
+    e.opts.forEach(function (o, k) {
+      var n = counts[o.id] || 0;
+      h += '<div class="erow"><input id="eo-' + id + '-' + esc(o.id) + '" data-ef="opt" data-k="' + k + '" maxlength="30" value="' + esc(o.label) + '" aria-label="选项 ' + (k + 1) + '">' +
+        (n ? '<span class="ecount">' + n + ' 注</span>' :
+          '<button type="button" class="x" data-act="eo-del" data-k="' + k + '" aria-label="删掉选项 ' + (k + 1) + '"' + (e.opts.length <= 2 ? ' disabled' : '') + '>×</button>') + '</div>';
+    });
+    h += '<button type="button" class="btn btn-ghost btn-sm" data-act="eo-add"' + (e.opts.length >= 8 ? ' disabled' : '') + '>＋ 加一个选项</button></fieldset>';
+    h += '<p class="form-msg is-err" role="status">' + esc(ui.errs.edit || '') + '</p>';
+    h += '<div class="acts"><button type="submit" class="btn btn-solid">保存</button>' + act('edit-no', m.id, '取消', 'btn-ghost') + '</div>';
+    return h + '</form></section>';
+  }
+
+  function renderNew() {
+    var h = '<section class="sec" id="new"><h2 class="sec-title" id="sec-new"' + ed('sec:new', DEF_LABELS.new) + '>' + esc(state.labels.new) + '</h2>';
+    h += '<p class="sec-sub">老师的任何举动都能开盘。点个模板再改字，或者从头写。</p>';
+    h += '<div class="tpl" role="group" aria-label="模板">' + TPL.map(function (t, k) {
+      return '<button type="button" class="tag" data-act="tpl" data-k="' + k + '">' + esc(t.k) + '</button>';
+    }).join('') + '</div>';
+    h += '<form class="newform" data-form="new" novalidate>';
+    h += '<div class="field"><label for="nq">盘口问题</label><input id="nq" maxlength="60" placeholder="例：老师今天会放案例视频吗？" value="' + esc(ui.mk.q) + '"></div>';
+    h += '<div class="field"><label for="no">选项（一行一个，至少两个）</label><textarea id="no" rows="4" placeholder="会&#10;不会">' + esc(ui.mk.opts) + '</textarea></div>';
+    h += '<p class="form-msg is-err" role="status">' + esc(ui.errs.new || '') + '</p>';
+    h += '<button type="submit" class="btn btn-solid">开盘</button></form></section>';
+    return h;
+  }
+
+  function renderLedger() {
+    var rows = ledger(), u = esc(state.unit);
+    var h = '<section class="sec" id="ledger"><h2 class="sec-title" id="sec-ledger"' + ed('sec:ledger', DEF_LABELS.ledger) + '>' + esc(state.labels.ledger) + '</h2>';
+    h += '<p class="sec-sub">只算已经开奖的盘，还没开奖的注码记在“待开”。</p>';
+    if (!rows.length) return h + '<p class="empty">还没人下注。</p></section>';
+    h += '<ol class="rank">' + rows.map(function (r, k) {
+      var meta = [];
+      if (r.played) meta.push('中 ' + r.hits + '/' + r.played + ' 盘');
+      if (r.pending) meta.push('待开 ' + fmt(r.pending) + ' ' + state.unit);
+      var cls = !r.played ? 'zero' : r.net > 0.04 ? 'pos' : r.net < -0.04 ? 'neg' : 'zero';
+      return '<li' + (k === 0 && r.played && r.net > 0 ? ' class="lead"' : '') + '><span class="r-no">' + (k + 1) + '</span>' +
+        '<span class="r-who">' + esc(r.who) + '<small>' + esc(meta.join(' · ')) + '</small></span>' +
+        '<span class="r-net ' + cls + '">' + (r.played ? sign(r.net) + '<small>' + u + '</small>' : '—') + '</span></li>';
+    }).join('') + '</ol></section>';
+    return h;
+  }
+
+  function renderTools(can) {
+    var h = '<section class="sec" id="tools"><h2 class="sec-title" id="sec-tools"' + ed('sec:tools', DEF_LABELS.tools) + '>' + esc(state.labels.tools) + '</h2>';
+    var local = mode === 'local', link = ui.copyKind === 'link';
+    h += '<p class="sec-sub">' + (local ? '复制链接发到微信群，同学点开就能看到现在的盘口、赔率和盈亏榜。也可以复制成一段文字战报。' : '把盘口、赔率和盈亏榜复制成一段文字，直接贴进微信群。') + '</p>';
+    h += '<div class="acts">' + (local ? '<button type="button" class="btn btn-solid" data-act="share">复制分享链接</button>' : '') +
+      '<button type="button" class="btn ' + (local ? 'btn-ghost' : 'btn-solid') + '" data-act="copy">复制战报</button></div>';
+    if (ui.copied) h += '<p class="form-msg" role="status">' + esc(ui.copied) + '</p>';
+    if (ui.copyText) h += '<div class="field"><label for="copy-out">没能自动复制。长按下面的' + (link ? '链接' : '文字') + '，全选后复制</label><textarea id="copy-out" rows="' + (link ? 4 : 9) + '" readonly>' + esc(ui.copyText) + '</textarea></div>';
+    if (local) h += '<p class="sec-sub">' + (hosted() ? '盘口存在这台设备的浏览器里。链接是发出那一刻的盘口，之后再改，要重新复制一次链接发出去。' : '盘口存在这台设备的浏览器里。页面放到网上以后，分享链接才能用。') + '</p>';
+    if (can) {
+      h += '<details class="settings"' + (ui.settingsOpen ? ' open' : '') + '><summary>盘口设置</summary><div class="sgrid">' +
+        field('s-unit', '筹码单位', state.unit, 6, '例：分、杯奶茶') +
+        '</div><div class="acts">' +
+        (ui.confirmClear ? act('clear-yes', '', '确认清空全部 ' + state.markets.length + ' 盘', 'btn-danger') + act('clear-no', '', '取消', 'btn-ghost')
+          : act('clear', '', '清空所有盘口', 'btn-ghost')) + '</div></details>';
+    }
+    return h + '</section>';
+  }
+  function field(id, label, val, max, ph) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" maxlength="' + max + '" placeholder="' + esc(ph) + '" value="' + esc(val) + '"></div>';
+  }
+
+  function report() {
+    var L = [], u = state.unit;
+    L.push('【' + state.title + '】' + (state.sub ? ' ' + state.sub : ''));
+    state.markets.forEach(function (m, i) {
+      var t = tally(m), st = m.status === 'open' ? '开盘中' : m.status === 'locked' ? '已封盘' : '已开奖';
+      L.push('');
+      L.push('第' + (i + 1) + '盘 ' + m.q + '（' + st + '，奖池 ' + fmt(t.T) + u + '）');
+      m.opts.forEach(function (o) {
+        var p = t.per[o.id];
+        var who = m.bets.filter(function (b) { return b.o === o.id; }).map(function (b) { return b.who + ' ' + fmt(b.amt); }).join('、');
+        var mark = m.status === 'settled' && m.result === o.id ? '【胜】' : '· ';
+        L.push(mark + o.label + '：' + fmt(p.pool) + u + (p.pool > 0 ? ' ×' + (t.T / p.pool).toFixed(2) : '') + (who ? '（' + who + '）' : ''));
+      });
+    });
+    var rows = ledger().filter(function (r) { return r.played; });
+    if (rows.length) {
+      L.push('');
+      L.push(state.labels.ledger);
+      rows.forEach(function (r, k) { L.push((k + 1) + '. ' + r.who + ' ' + sign(r.net) + u); });
+    }
+    if (mode === 'local' && hosted()) { L.push(''); L.push('看盘口：' + shareLink()); }
+    return L.join('\n');
+  }
+
+  /* ---------- share links: the whole board travels inside the link ---------- */
+  function hosted() { return /^https?:$/.test(location.protocol) && !/claude\.ai$|claudeusercontent|claude\.site/.test(location.hostname); }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  function b64u(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64u(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function pipe(bytes, stream) {
+    return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (b) { return new Uint8Array(b); });
+  }
+  function packState() {
+    return {
+      v: 1, t: state.title, s: state.sub, u: state.unit, a: state.updated,
+      l: [state.labels.new, state.labels.ledger, state.labels.tools],
+      m: state.markets.map(function (m) {
+        var idx = {};
+        m.opts.forEach(function (o, k) { idx[o.id] = k; });
+        return [m.q, ['open', 'locked', 'settled'].indexOf(m.status), m.result ? idx[m.result] : -1,
+          m.opts.map(function (o) { return o.label; }),
+          m.bets.map(function (b) { return [idx[b.o], b.who, b.amt]; })];
+      })
+    };
+  }
+  function unpack(p) {
+    if (!p || p.v !== 1 || !Array.isArray(p.m)) throw new Error('bad');
+    var l = Array.isArray(p.l) ? p.l : [];
+    return normalize({
+      rev: 0, updated: p.a, title: p.t, sub: p.s, unit: p.u, note: '', labels: { new: l[0], ledger: l[1], tools: l[2] },
+      markets: p.m.map(function (r, i) {
+        r = Array.isArray(r) ? r : [];
+        return {
+          id: 'm' + i, q: r[0], status: ['open', 'locked', 'settled'][r[1]] || 'open', result: r[2] >= 0 ? 'o' + r[2] : null,
+          opts: (Array.isArray(r[3]) ? r[3] : []).map(function (lb, k) { return { id: 'o' + k, label: lb }; }),
+          bets: (Array.isArray(r[4]) ? r[4] : []).map(function (b, j) { return { id: 'b' + i + '_' + j, o: 'o' + b[0], who: b[1], amt: b[2] }; })
+        };
+      })
+    });
+  }
+  function shareKey() { return state.rev + '|' + state.updated + '|' + state.markets.length; }
+  function shareLink() {
+    var p = ui.shareKey === shareKey() && ui.sharePayload ? ui.sharePayload : 'j' + b64u(utf8(JSON.stringify(packState())));
+    return location.origin + location.pathname + '#b=' + p;
+  }
+  function refreshShare() {
+    if (mode !== 'local' || typeof CompressionStream === 'undefined') return;
+    var key = shareKey();
+    if (ui.shareKey === key || ui.shareBusy === key) return;
+    ui.shareBusy = key;
+    var raw = utf8(JSON.stringify(packState()));
+    pipe(raw, new CompressionStream('deflate')).then(function (z) {
+      if (shareKey() !== key) return;
+      var zp = 'z' + b64u(z), jp = 'j' + b64u(raw);
+      ui.sharePayload = zp.length < jp.length ? zp : jp; ui.shareKey = key;
+    }).catch(function () {}).then(function () { if (ui.shareBusy === key) ui.shareBusy = ''; });
+  }
+  function snapPayload() {
+    var m = /[#&?]b=([A-Za-z0-9_-]{4,})/.exec(location.hash) || /[?&]b=([A-Za-z0-9_-]{4,})/.exec(location.search);
+    return m ? m[1] : null;
+  }
+  function decodeSnap(p) {
+    return Promise.resolve().then(function () {
+      var kind = p.charAt(0), data = unb64u(p.slice(1));
+      if (kind === 'j') return data;
+      if (kind !== 'z') throw new Error('bad');
+      if (typeof DecompressionStream === 'undefined') throw new Error('old');
+      return pipe(data, new DecompressionStream('deflate'));
+    }).then(function (bytes) { return unpack(JSON.parse(new TextDecoder().decode(bytes))); });
+  }
+  function doImport() {
+    mode = 'local';
+    ui.confirmImport = false;
+    state.rev = (state.rev || 0) + 1;
+    state.updated = new Date().toISOString();
+    saveLocal();
+    try { history.replaceState(null, '', location.pathname + location.search.replace(/([?&])b=[^&]*&?/, '$1').replace(/[?&]$/, '')); } catch (e) {}
+    render(); updatePill();
+  }
+  function copyOut(text, kind) {
+    ui.copyText = ''; ui.copyKind = kind; ui.copied = '';
+    function fallback() {
+      ui.copyText = text; render();
+      var ta = document.getElementById('copy-out');
+      if (ta) { ta.focus(); ta.select(); }
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        ui.copied = kind === 'link' ? '链接已复制，贴进微信群就行。同学点开看到的是现在这一刻的盘口；之后再改，要重新复制一次。' : '已复制，去群里粘贴吧。';
+        render();
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(function () { if (ui.copied) { ui.copied = ''; render(); } }, kind === 'link' ? 9000 : 3500);
+      }, fallback);
+    } catch (e) { fallback(); }
+  }
+
+  /* ---------- actions ---------- */
+  function getHeading(kind, arg) {
+    if (kind === 'title') return state.title;
+    if (kind === 'sub') return state.sub;
+    if (kind === 'q') { var m = findM(arg); return m ? m.q : null; }
+    if (kind === 'sec') return Object.prototype.hasOwnProperty.call(DEF_LABELS, arg) ? state.labels[arg] : null;
+    return null;
+  }
+  function setHeading(kind, arg, v) {
+    if (kind === 'title') state.title = v;
+    else if (kind === 'sub') state.sub = v;
+    else if (kind === 'q') { var m = findM(arg); if (m) m.q = v; }
+    else if (kind === 'sec') state.labels[arg] = v;
+  }
+  function commitHeading(el) {
+    if (!canWrite()) return;
+    var key = el.dataset.edit || '', kind = key.split(':')[0], arg = key.slice(kind.length + 1);
+    var cur = getHeading(kind, arg);
+    if (cur === null) return;
+    var v = el.textContent.replace(/\s+/g, ' ').trim().slice(0, LIMITS[kind] || 40);
+    if (!v && kind !== 'sub') v = cur;
+    if (el.textContent !== v) el.textContent = v;
+    if (v === cur) return;
+    setHeading(kind, arg, v);
+    commit(true);
+  }
+
+  function commit(quiet) {
+    state.rev = (state.rev || 0) + 1;
+    state.updated = new Date().toISOString();
+    if (!quiet) render();
+    if (mode === 'local' || mode === 'boot') saveLocal();
+    if (mode === 'sync' || mode === 'boot') {
+      pub.dirty = true; pub.err = '';
+      if (!pub.since) pub.since = Date.now();
+      schedule(2200);
+    }
+    updatePill();
+  }
+
+  function placeBet(mid) {
+    var m = findM(mid); if (!m || m.status !== 'open') return;
+    var d = draft(mid), who = String(d.who || '').trim().slice(0, 16), amt = Math.round(num(d.amt) * 100) / 100;
+    var o = d.o && optOf(m, d.o);
+    var err = !o ? '先点上面一个选项。' : !who ? '写上下注人的名字。' : !(amt > 0) ? '注码要大于 0。' : amt > 1e6 ? '注码太大了，换个小点的数。' : '';
+    ui.done[mid] = '';
+    if (err) { ui.errs[mid] = err; render(); return; }
+    m.bets.push({ id: uid(), o: o.id, who: who, amt: amt, t: Date.now() });
+    ui.errs[mid] = '';
+    ui.done[mid] = '记下了：' + who + ' 押「' + o.label + '」' + fmt(amt) + ' ' + state.unit + '。';
+    d.who = ''; d.o = null;
+    commit();
+  }
+
+  function createMarket() {
+    var q = ui.mk.q.trim(), seen = {};
+    var opts = ui.mk.opts.split(/[\n,，、;；]+/).map(function (s) { return s.trim().slice(0, 30); })
+      .filter(function (s) { return s && !seen[s] && (seen[s] = 1); }).slice(0, 8);
+    var err = !q ? '写上盘口问题。' : opts.length < 2 ? '至少要两个选项，一行写一个。' : '';
+    if (err) { ui.errs.new = err; render(); return; }
+    var m = { id: uid(), q: q.slice(0, 60), opts: opts.map(function (l) { return { id: uid(), label: l }; }), bets: [], status: 'open', result: null };
+    state.markets.push(m);
+    ui.mk = { q: '', opts: '' }; ui.errs.new = '';
+    commit();
+    var el = document.getElementById('m-' + m.id);
+    if (el) el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+
+  function saveEdit(mid) {
+    var m = findM(mid), e = ui.editDraft; if (!m || !e) return;
+    var has = {}, seen = {}, opts = [], err = '';
+    m.bets.forEach(function (b) { has[b.o] = 1; });
+    e.opts.forEach(function (o) {
+      var l = String(o.label || '').trim().slice(0, 30);
+      if (!l) { if (has[o.id] && !err) err = '有人押的选项不能留空。'; return; }
+      if (seen[l]) { if (!err) err = '选项重名了：' + l + '。'; return; }
+      seen[l] = 1; opts.push({ id: o.id, label: l });
+    });
+    var q = String(e.q || '').trim();
+    if (!q) err = '盘口问题不能空着。';
+    if (!err && opts.length < 2) err = '至少要两个选项。';
+    if (err) { ui.errs.edit = err; render(); return; }
+    var ids = {};
+    opts.forEach(function (o) { ids[o.id] = 1; });
+    m.q = q.slice(0, 60); m.opts = opts;
+    m.bets = m.bets.filter(function (b) { return ids[b.o]; });
+    if (m.result && !ids[m.result]) { m.result = null; if (m.status === 'settled') m.status = 'locked'; }
+    var d = draft(mid); if (d.o && !ids[d.o]) d.o = null;
+    ui.editing = null; ui.editDraft = null; ui.errs.edit = '';
+    commit();
+  }
+
+
+  function focusId(id) { var n = document.getElementById(id); if (n) { try { n.focus(); } catch (e) {} } }
+
+  app.addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-act]');
+    if (!el || el.disabled || !app.contains(el)) return;
+    var a = el.dataset.act, mid = el.dataset.m, m = mid ? findM(mid) : null;
+    if (a === 'copy') { copyOut(report(), 'text'); return; }
+    if (a === 'share') { if (mode === 'local') copyOut(shareLink(), 'link'); return; }
+    if (a === 'import') {
+      if (mode !== 'snapshot') return;
+      var had = loadLocal();
+      if (had && had.markets.length && !ui.confirmImport) { ui.confirmImport = true; render(); return; }
+      doImport(); return;
+    }
+    if (a === 'import-no') { ui.confirmImport = false; render(); return; }
+    if (!canWrite()) return;
+    switch (a) {
+      case 'pick':
+        if (!m) return;
+        if (ui.settling === mid) { m.result = el.dataset.o; m.status = 'settled'; ui.settling = null; commit(); return; }
+        if (m.status !== 'open') return;
+        var d = draft(mid); d.o = d.o === el.dataset.o ? null : el.dataset.o;
+        ui.errs[mid] = ''; ui.done[mid] = '';
+        render(); return;
+      case 'qa': draft(mid).amt = num(el.dataset.v); render(); return;
+      case 'delbet': if (m) { m.bets = m.bets.filter(function (b) { return b.id !== el.dataset.b; }); ui.done[mid] = ''; commit(); } return;
+      case 'lock': if (m) { m.status = 'locked'; commit(); } return;
+      case 'unlock': if (m) { m.status = 'open'; commit(); } return;
+      case 'settle': ui.settling = mid; ui.confirmDel = null; render(); return;
+      case 'settle-no': ui.settling = null; render(); afterUiChange(); return;
+      case 'unsettle': if (m) { m.status = 'locked'; m.result = null; commit(); } return;
+      case 'edit':
+        if (!m) return;
+        ui.editing = mid; ui.settling = null; ui.confirmDel = null; ui.errs.edit = '';
+        ui.editDraft = { q: m.q, opts: m.opts.map(function (o) { return { id: o.id, label: o.label }; }) };
+        render(); focusId('eq-' + mid); return;
+      case 'eo-add':
+        if (!ui.editDraft || ui.editDraft.opts.length >= 8) return;
+        var nid = uid(); ui.editDraft.opts.push({ id: nid, label: '' });
+        render(); focusId('eo-' + ui.editing + '-' + nid); return;
+      case 'eo-del':
+        if (!ui.editDraft || ui.editDraft.opts.length <= 2) return;
+        ui.editDraft.opts.splice(+el.dataset.k, 1); render(); return;
+      case 'edit-no': ui.editing = null; ui.editDraft = null; ui.errs.edit = ''; render(); afterUiChange(); return;
+      case 'del': ui.confirmDel = mid; ui.settling = null; render(); return;
+      case 'del-no': ui.confirmDel = null; render(); afterUiChange(); return;
+      case 'del-yes':
+        state.markets = state.markets.filter(function (x) { return x.id !== mid; });
+        delete ui.drafts[mid]; ui.confirmDel = null; commit(); return;
+      case 'tpl':
+        var t = TPL[+el.dataset.k]; if (!t) return;
+        ui.mk = { q: t.q, opts: t.o.join('\n') }; ui.errs.new = ''; render(); focusId('nq'); return;
+      case 'note-x': state.note = ''; commit(); return;
+      case 'clear': ui.confirmClear = true; render(); return;
+      case 'clear-no': ui.confirmClear = false; render(); return;
+      case 'clear-yes': state.markets = []; ui.drafts = {}; ui.confirmClear = false; commit(); return;
+    }
+  });
+
+  app.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if ((t.name === 'who' || t.name === 'amt') && t.dataset.m) {
+      var mid = t.dataset.m, m = findM(mid), d = draft(mid);
+      d[t.name] = t.value;
+      var f = t.closest('form'), go = f && f.querySelector('.bet-go');
+      if (go && m) go.textContent = betLabel(m, d);
+      if (t.name === 'amt' && f) {
+        f.querySelectorAll('.qa').forEach(function (b) { b.setAttribute('aria-pressed', String(num(b.dataset.v) === num(t.value))); });
+      }
+      return;
+    }
+    if (t.id === 'nq') ui.mk.q = t.value;
+    else if (t.id === 'no') ui.mk.opts = t.value;
+    else if (ui.editDraft && t.dataset.ef === 'q') ui.editDraft.q = t.value;
+    else if (ui.editDraft && t.dataset.ef === 'opt') { var o = ui.editDraft.opts[+t.dataset.k]; if (o) o.label = t.value; }
+  });
+
+  app.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (!canWrite()) return;
+    if (t.id === 's-unit') { var u = t.value.trim().slice(0, 6) || '分'; if (u !== state.unit) { state.unit = u; commit(); } }
+  });
+
+  app.addEventListener('toggle', function (ev) {
+    if (ev.target.matches && ev.target.matches('details.settings')) ui.settingsOpen = ev.target.open;
+  }, true);
+
+  app.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (!canWrite()) return;
+    var f = ev.target, kind = f.dataset.form;
+    if (kind === 'bet') placeBet(f.dataset.m);
+    else if (kind === 'new') createMarket();
+    else if (kind === 'edit') saveEdit(f.dataset.m);
+  });
+
+  app.addEventListener('focusin', function (ev) {
+    var t = ev.target;
+    if (t.dataset && t.dataset.edit) t.dataset.orig = t.textContent;
+  });
+  app.addEventListener('focusout', function (ev) {
+    var t = ev.target;
+    if (t.dataset && t.dataset.edit) commitHeading(t);
+    if (pub.dirty) schedule(1200);
+  });
+  app.addEventListener('keydown', function (ev) {
+    var t = ev.target;
+    if (!t.dataset || !t.dataset.edit) return;
+    if (ev.key === 'Enter' && !ev.isComposing && ev.keyCode !== 229) { ev.preventDefault(); t.blur(); }
+    else if (ev.key === 'Escape') { t.textContent = t.dataset.orig || ''; t.blur(); }
+  });
+  app.addEventListener('paste', function (ev) {
+    var t = ev.target && ev.target.closest ? ev.target.closest('[data-edit]') : null;
+    if (!t) return;
+    ev.preventDefault();
+    var text = ((ev.clipboardData || window.clipboardData).getData('text') || '').replace(/\s+/g, ' ');
+    if (!document.execCommand('insertText', false, text)) t.textContent += text;
+  });
+  app.addEventListener('drop', function (ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('[data-edit]')) ev.preventDefault();
+  });
+
+  /* ---------- saving ---------- */
+  function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
+  function clearLocal() { try { localStorage.removeItem(LS_KEY); } catch (e) {} }
+  function loadLocal() { try { var s = localStorage.getItem(LS_KEY); return s ? normalize(JSON.parse(s)) : null; } catch (e) { return null; } }
+
+  function stash(saving) {
+    try {
+      sessionStorage.setItem(SS_KEY, JSON.stringify({ rev: state.rev, saving: !!saving, y: window.scrollY, drafts: ui.drafts, mk: ui.mk, settingsOpen: ui.settingsOpen }));
+    } catch (e) {}
+  }
+  function unstash() { try { sessionStorage.removeItem(SS_KEY); } catch (e) {} }
+  function restore() {
+    var s = null;
+    try { s = JSON.parse(sessionStorage.getItem(SS_KEY) || 'null'); sessionStorage.removeItem(SS_KEY); } catch (e) { s = null; }
+    if (!s || typeof s !== 'object') return null;
+    if (s.drafts && typeof s.drafts === 'object') {
+      Object.keys(s.drafts).forEach(function (k) {
+        var d = s.drafts[k], m = findM(k);
+        if (!m || !d) return;
+        ui.drafts[k] = { who: String(d.who || ''), amt: d.amt == null ? 10 : d.amt, o: d.o && optOf(m, d.o) ? d.o : null };
+      });
+    }
+    if (s.mk) ui.mk = { q: String(s.mk.q || ''), opts: String(s.mk.opts || '') };
+    ui.settingsOpen = !!s.settingsOpen;
+    return s;
+  }
+
+  function busyEditing() { return !!(ui.editing || ui.settling || ui.confirmDel || ui.confirmClear); }
+  function typing() {
+    var a = document.activeElement;
+    return !!(a && app.contains(a) && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'button')));
+  }
+  function afterUiChange() { if (pub.dirty) schedule(1200); }
+  function schedule(ms) {
+    clearTimeout(pub.timer);
+    pub.timer = setTimeout(tryPublish, ms || 2200);
+    updatePill();
+  }
+  function tryPublish() {
+    if (!pub.dirty || pub.saving) return;
+    if (mode !== 'sync') { if (mode === 'boot') schedule(1500); return; }
+    if (busyEditing()) { schedule(2000); return; }
+    if (typing() && Date.now() - pub.since < 20000) { schedule(1500); return; }
+    doPublish();
+  }
+  function buildDoc() {
+    var css = cssEl ? cssEl.textContent : '', js = jsEl ? jsEl.textContent : '';
+    if (css.length < 500 || js.length < 2000) throw new Error('page source unavailable');
+    var data = JSON.stringify(state).replace(/</g, '\\u003c').split(String.fromCharCode(0x2028)).join('\\u2028').split(String.fromCharCode(0x2029)).join('\\u2029');
+    var S = 'script', ST = 'style';
+    return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><' + ST + '>' + RESET + '</' + ST + '></head><body>' +
+      '<title>' + PAGE_TITLE + '</title>\n' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
+      '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
+      '<link rel="stylesheet" href="' + FONT_HREF + '">\n' +
+      '<' + ST + ' id="app-css">' + css + '</' + ST + '>\n' +
+      '<main id="app" class="wrap"></main>\n' +
+      '<' + S + ' type="application/json" id="board-data">' + data + '</' + S + '>\n' +
+      '<' + S + ' id="app-js">' + js + '</' + S + '>\n' +
+      '</body></html>';
+  }
+  function doPublish() {
+    var html;
+    try { html = buildDoc(); } catch (e) { toLocal(); return; }
+    pub.saving = true; updatePill();
+    stash(true);
+    api.publish(html).then(function () {
+      pub.dirty = false; pub.saving = false; pub.since = 0; pub.retried = false;
+      clearLocal(); updatePill();
+    }, function (e) {
+      pub.saving = false; unstash();
+      var c = e && e.code;
+      if (c === 'conflict') { stash(false); pub.err = 'conflict'; updatePill(); return; }
+      if (c === 'not_writer' || c === 'not_granted' || c === 'consent_required') { toReadonly('你没有改这个盘口的权限，刚才的改动没有保存。'); return; }
+      if (c === 'not_declared' || c === 'capability_disabled' || c === 'capability_removed') { toLocal(); return; }
+      if (c === 'rate_limited') { schedule(10000); return; }
+      if (c === 'too_large') { pub.err = 'too_large'; updatePill(); return; }
+      if (c !== 'invalid_content' && c !== 'transform_error' && !pub.retried) { pub.retried = true; schedule(1500 + Math.random() * 1500); return; }
+      pub.err = 'fail'; updatePill();
+    });
+  }
+
+  var pill = document.createElement('div');
+  pill.className = 'pill'; pill.setAttribute('role', 'status'); pill.hidden = true;
+  document.body.appendChild(pill);
+  pill.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-act="retry"]')) { pub.retried = false; pub.err = ''; pub.since = Date.now() - 30000; tryPublish(); updatePill(); }
+  });
+  function updatePill(flash) {
+    var t = '', b = '';
+    if (mode === 'sync' || mode === 'boot') {
+      if (pub.saving) t = '正在保存，页面会刷新一下…';
+      else if (pub.err === 'conflict') t = '盘口刚在别处更新过，正在载入最新版';
+      else if (pub.err === 'too_large') t = '内容太多存不下了，删掉几盘再试';
+      else if (pub.err === 'fail') { t = '没保存上'; b = '<button type="button" data-act="retry">重试</button>'; }
+      else if (pub.dirty) t = ui.editing ? '改完点“保存”后再同步' : '有改动，马上保存…';
+      else if (flash) t = flash;
+    }
+    pill.hidden = !t;
+    pill.innerHTML = t ? '<span>' + esc(t) + '</span>' + b : '';
+    if (flash && t === flash) {
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(function () { if (!pub.dirty && !pub.err && !pub.saving && mode === 'sync') { pill.hidden = true; } }, 2600);
+    }
+  }
+
+  /* ---------- modes ---------- */
+  function toSync() {
+    if (mode === 'readonly') return;
+    mode = 'sync';
+    clearLocal();
+    if (pub.dirty) schedule(1500);
+    updatePill();
+  }
+  function toLocal() {
+    if (mode === 'local' || mode === 'readonly') return;
+    mode = 'local';
+    clearTimeout(pub.timer);
+    var l = loadLocal();
+    if (l && l.updated && (!state.updated || l.updated > state.updated)) { state = l; render(); }
+    else if (pub.dirty) saveLocal();
+    pub.dirty = false; pub.saving = false;
+    updatePill();
+  }
+  function toReadonly(reason) {
+    mode = 'readonly';
+    ui.roReason = reason || '';
+    clearTimeout(pub.timer);
+    pub.dirty = false; pub.saving = false;
+    state = clone(embedded);
+    ui.editing = ui.editDraft = ui.settling = ui.confirmDel = null; ui.confirmClear = false;
+    render(); updatePill();
+  }
+  function initMode() {
+    var C = window.claude;
+    if (!C || typeof C.use !== 'function') { toLocal(); return; }
+    function get(n) { return Promise.resolve().then(function () { return C.use(n); }).catch(function () { return null; }); }
+    Promise.all([get('artifact'), get('user')]).then(function (r) {
+      var a = r[0], u = r[1];
+      if (!a || typeof a.publish !== 'function') { toLocal(); return; }
+      api = a;
+      if (!u || typeof u.canEdit !== 'function') { toSync(); return; }
+      Promise.resolve().then(function () { return u.canEdit(); }).then(function (ok) {
+        if (ok) toSync(); else toReadonly();
+      }, toSync);
+    });
+  }
+
+  /* ---------- boot ---------- */
+  var snapP = snapPayload();
+  if (snapP) {
+    mode = 'snapshot';
+    app.innerHTML = '<p class="loading">正在打开盘口…</p>';
+    decodeSnap(snapP).then(function (st) {
+      state = st; ui.snapAt = st.updated; render();
+    }, function (e) {
+      ui.snapErr = e && e.message === 'old' ? '这个浏览器版本太旧，打不开盘口链接。升级微信，或者复制链接到手机浏览器里打开。' : '这个盘口链接打不开，可能复制的时候被截断了。请开盘的人重新发一次。';
+      mode = 'boot'; render(); initMode();
+    });
+  } else {
+    var s = restore();
+    render();
+    if (s && s.y) requestAnimationFrame(function () { window.scrollTo(0, s.y); });
+    initMode();
+    if (s && s.saving && s.rev === embedded.rev) setTimeout(function () { updatePill('已保存，打开链接的人看到的都是这版'); }, 300);
+  }
+  window.addEventListener('hashchange', function () { if (snapPayload()) location.reload(); });
+})();
+</script>
+
+</body>
+</html>
