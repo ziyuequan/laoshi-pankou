@@ -224,6 +224,8 @@ textarea{resize:vertical}
   };
   var HOST_LS = 'teacher-bet-host:';
   var POLL_MS = 4000;
+  /* 不带 ?board= 时就是这个盘口：链接发出去谁打开都是同一个盘，不用填编号 */
+  var DEFAULT_BOARD = 'main';
 
   var app = document.getElementById('app');
   var cssEl = document.getElementById('app-css');
@@ -235,8 +237,8 @@ textarea{resize:vertical}
   var pub = { timer: 0, dirty: false, saving: false, err: '', retried: false, since: 0 };
   var cloud = {
     board: '', token: '', rev: 0, sig: '', poll: 0, saveTimer: 0,
-    saving: false, pulling: false, err: '', setup: { board: '', token: '' },
-    setupErr: '', setupOpen: false, joinOpen: false, joinToken: '', joinErr: ''
+    saving: false, pulling: false, err: '',
+    joinOpen: false, joinToken: '', joinErr: ''
   };
   var ui = { drafts: {}, mk: { q: '', opts: '' }, editing: null, editDraft: null, settling: null, confirmDel: null, confirmClear: false, errs: {}, done: {}, roReason: '', copyText: '', copyKind: '', copied: '', settingsOpen: false, snapAt: '', snapErr: '', confirmImport: false, sharePayload: '', shareKey: '', shareBusy: '' };
   var flashTimer = 0, copyTimer = 0;
@@ -530,7 +532,7 @@ textarea{resize:vertical}
     if (ui.copyText) h += '<div class="field"><label for="copy-out">没能自动复制。长按下面的' + (link ? '链接' : '文字') + '，全选后复制</label><textarea id="copy-out" rows="' + (link ? 4 : 9) + '" readonly>' + esc(ui.copyText) + '</textarea></div>';
     if (local) h += '<p class="sec-sub">' + (hosted() ? '盘口存在这台设备的浏览器里。链接是发出那一刻的盘口，之后再改，要重新复制一次链接发出去。' : '盘口存在这台设备的浏览器里。页面放到网上以后，分享链接才能用。') + '</p>';
     if (isCloud()) h += '<p class="sec-sub">盘口和注码存在服务器上，链接可以反复发；同学那边自动刷新，不用你重新发链接。</p>';
-    if (local && SB.url && SB.key && hosted()) h += renderCloudSetup();
+
     if (can) {
       h += '<details class="settings"' + (ui.settingsOpen ? ' open' : '') + '><summary>盘口设置</summary><div class="sgrid">' +
         field('s-unit', '筹码单位', state.unit, 6, '例：分、杯奶茶') +
@@ -781,11 +783,8 @@ textarea{resize:vertical}
       doImport(); return;
     }
     if (a === 'import-no') { ui.confirmImport = false; render(); return; }
-    if (a === 'cloud-on') { cloudClaim(cloud.setup.board, cloud.setup.token, true); return; }
     if (a === 'cloud-refresh') { cloud.sig = ''; cloudPull(true); return; }
-    if (a === 'host-join') { cloud.joinOpen = true; cloud.joinErr = ''; render(); focusId('join-token'); return; }
-    if (a === 'host-join-no') { cloud.joinOpen = false; cloud.joinErr = ''; render(); return; }
-    if (a === 'host-join-go') { cloudClaim(cloud.board, cloud.joinToken, false); return; }
+    if (a === 'host-link') { if (mode === 'cloud' && cloud.token) copyOut(hostLink(), 'link'); return; }
     if (!canWrite()) {
       if (!canBet() || !m) return;
       if (a === 'pick') {
@@ -853,10 +852,7 @@ textarea{resize:vertical}
       }
       return;
     }
-    if (t.id === 'cb-board') cloud.setup.board = t.value;
-    else if (t.id === 'cb-token') cloud.setup.token = t.value;
-    else if (t.id === 'join-token') cloud.joinToken = t.value;
-    else if (t.id === 'nq') ui.mk.q = t.value;
+    if (t.id === 'nq') ui.mk.q = t.value;
     else if (t.id === 'no') ui.mk.opts = t.value;
     else if (ui.editDraft && t.dataset.ef === 'q') ui.editDraft.q = t.value;
     else if (ui.editDraft && t.dataset.ef === 'opt') { var o = ui.editDraft.opts[+t.dataset.k]; if (o) o.label = t.value; }
@@ -869,10 +865,7 @@ textarea{resize:vertical}
   });
 
   app.addEventListener('toggle', function (ev) {
-    if (ev.target.matches && ev.target.matches('details.settings')) {
-      if (ev.target.id === 'cloudbox') cloud.setupOpen = ev.target.open;
-      else ui.settingsOpen = ev.target.open;
-    }
+    if (ev.target.matches && ev.target.matches('details.settings')) ui.settingsOpen = ev.target.open;
   }, true);
 
   app.addEventListener('submit', function (ev) {
@@ -1075,11 +1068,26 @@ textarea{resize:vertical}
     var m = /[?&]board=([A-Za-z0-9_-]{3,40})/.exec(location.search) || /[#&]board=([A-Za-z0-9_-]{3,40})/.exec(location.hash);
     return m ? m[1] : '';
   }
-  function suggestBoardId() {
-    var d = new Date();
-    return 'p' + pad(d.getMonth() + 1) + pad(d.getDate()) + Math.random().toString(36).slice(2, 6);
+  function cloudLink() {
+    var base = location.origin + location.pathname;
+    return cloud.board === DEFAULT_BOARD ? base : base + '?board=' + encodeURIComponent(cloud.board);
   }
-  function cloudLink() { return location.origin + location.pathname + '?board=' + encodeURIComponent(cloud.board); }
+  /* 开盘人链接：只给自己换手机用，点开即成为开盘人，别发到群里 */
+  function hostLink() {
+    var base = location.origin + location.pathname + '?host=' + encodeURIComponent(cloud.token);
+    return cloud.board === DEFAULT_BOARD ? base : base + '&board=' + encodeURIComponent(cloud.board);
+  }
+  function hostFromUrl() {
+    var m = /[?&]host=([A-Za-z0-9_-]{6,64})/.exec(location.search) || /[#&]host=([A-Za-z0-9_-]{6,64})/.exec(location.hash);
+    return m ? m[1] : '';
+  }
+  /* 口令是身份，别留在地址栏里被同学看见 */
+  function stripHostParam() {
+    try {
+      var q = location.search.replace(/([?&])host=[^&]*&?/, '$1').replace(/[?&]$/, '');
+      history.replaceState(null, '', location.pathname + q);
+    } catch (e) {}
+  }
   var ERRS = /(token_short|bad_token|bad_board_id|no_board|market_closed|too_many|bad_amt|no_who)/;
   function rpc(fn, body) {
     return fetch(SB.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + fn, {
@@ -1125,8 +1133,8 @@ textarea{resize:vertical}
       cloud.pulling = false;
       if (cloud.err === 'net') cloud.err = '';
       if (!res || res.exists === false) {
-        if (mode === 'guest') { ui.snapErr = '这个盘口还没开起来。让开盘的人先在他那台设备上点“开启多人下注”，再发一次链接。'; render(); }
-        return false;
+        if (mode === 'guest') { ui.snapErr = '盘口还没开起来，等开盘的人开一下。'; render(); }
+        return 'missing';
       }
       var sig = cloudSig(res);
       if (!force && (sig === cloud.sig || editingNow())) { updatePill(); return true; }
@@ -1238,41 +1246,31 @@ textarea{resize:vertical}
   }
   function stopPoll() { if (cloud.poll) { clearInterval(cloud.poll); cloud.poll = 0; } }
   function initCloud() {
-    var id = boardFromUrl();
-    if (!id) { cloud.setup.board = suggestBoardId(); toLocal(); render(); return; }
+    var id = boardFromUrl() || DEFAULT_BOARD;
     cloud.board = id;
-    cloud.token = lsGet(HOST_LS + id) || '';
+    var fromUrl = hostFromUrl();
+    if (fromUrl) { lsSet(HOST_LS + id, fromUrl); stripHostParam(); }
+    cloud.token = fromUrl || lsGet(HOST_LS + id) || '';
     mode = cloud.token ? 'cloud' : 'guest';
     app.innerHTML = '<p class="loading">正在打开盘口…</p>';
-    cloudPull(true);
+    cloudPull(true).then(function (r) {
+      // 开盘人第一次打开、盘口还不存在 → 用页面自带的示例盘直接建起来
+      if (r === 'missing' && mode === 'cloud' && cloud.token) cloudClaim(id, cloud.token, true);
+    });
     startPoll();
   }
   function renderCloudBanner() {
     var h = '';
     if (mode === 'guest') {
-      h += '<div class="banner"><p>大家一起下注中：填名字、点选项就能押，几秒内所有人看到同一个盘口。封盘、开奖、改字只有开盘的人能做。</p>';
-      if (cloud.joinOpen) {
-        h += '<div class="field"><label for="join-token">开盘口令</label><input id="join-token" autocomplete="off" maxlength="40" value="' + esc(cloud.joinToken) + '"></div>' +
-          '<div class="acts"><button type="button" class="btn btn-solid" data-act="host-join-go">确认</button>' +
-          '<button type="button" class="btn btn-ghost" data-act="host-join-no">取消</button></div>';
-      } else {
-        h += '<div class="acts"><button type="button" class="btn btn-ghost" data-act="cloud-refresh">刷新</button>' +
-          '<button type="button" class="btn btn-ghost" data-act="host-join">我是开盘人</button></div>';
-      }
+      h += '<div class="banner"><p>填个名字、点选项就能押。几秒内所有人看到同一个盘口。</p>';
+      h += '<div class="acts"><button type="button" class="btn btn-ghost" data-act="cloud-refresh">刷新</button></div>';
       if (cloud.joinErr) h += '<p class="form-msg is-err" role="status">' + esc(cloud.joinErr) + '</p>';
       return h + '</div>';
     }
-    return '<div class="banner"><p>你是这个盘口的开盘人（编号 <b>' + esc(cloud.board) + '</b>）。从你发的链接进来的人只能下注。</p>' +
-      '<div class="acts"><button type="button" class="btn btn-ghost" data-act="share">复制分享链接</button>' +
+    return '<div class="banner"><p>你是开盘人。把“分享链接”发群里，同学填个名字就能押；封盘、开奖、改字只有你能做。</p>' +
+      '<div class="acts"><button type="button" class="btn btn-solid" data-act="share">复制分享链接</button>' +
+      '<button type="button" class="btn btn-ghost" data-act="host-link">复制开盘人链接（换手机用，别发群）</button>' +
       '<button type="button" class="btn btn-ghost" data-act="cloud-refresh">刷新</button></div></div>';
-  }
-  function renderCloudSetup() {
-    return '<details class="settings" id="cloudbox"' + (cloud.setupOpen ? ' open' : '') + '><summary>让同学一起下注</summary><div class="sgrid">' +
-      field('cb-board', '盘口编号（会出现在链接里）', cloud.setup.board, 40, '例：sheji1012') +
-      field('cb-token', '开盘口令（只有你知道）', cloud.setup.token, 40, '至少 4 位，换手机要用') +
-      '</div><p class="sec-sub">点开启以后，这台设备上的盘口会搬到服务器，链接发群里：同学填个名字就能下注，你负责封盘和开奖。口令记在这台设备上；换手机时输一次就能把开盘权拿回去。</p>' +
-      '<div class="acts"><button type="button" class="btn btn-solid" data-act="cloud-on">开启多人下注</button></div>' +
-      (cloud.setupErr ? '<p class="form-msg is-err" role="status">' + esc(cloud.setupErr) + '</p>' : '') + '</details>';
   }
 
   function initMode() {
